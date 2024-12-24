@@ -1,15 +1,20 @@
 package gestioninventaire.model;
 
-public class Produit {
+import java.io.Serializable;
+
+public class Produit implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private int id;
     private String nom;
     private String categorie;
     private int quantite;
     private double prix;
 
-    // Constructeurs
+    // Default constructor
     public Produit() {}
 
+    // Constructor for creating a new product
     public Produit(String nom, String categorie, int quantite, double prix) {
         this.nom = nom;
         this.categorie = categorie;
@@ -17,7 +22,16 @@ public class Produit {
         this.prix = prix;
     }
 
-    // Getters et Setters
+    // Constructor for updating a product (with ID)
+    public Produit(int id, String nom, String categorie, int quantite, double prix) {
+        this.id = id;
+        this.nom = nom;
+        this.categorie = categorie;
+        this.quantite = quantite;
+        this.prix = prix;
+    }
+
+    // Getters and setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
     public String getNom() { return nom; }
@@ -28,4 +42,16 @@ public class Produit {
     public void setQuantite(int quantite) { this.quantite = quantite; }
     public double getPrix() { return prix; }
     public void setPrix(double prix) { this.prix = prix; }
+
+    // toString() override
+    @Override
+    public String toString() {
+        return "Produit {" +
+               "ID: " + id +
+               ", Nom: '" + nom + '\'' +
+               ", Catégorie: '" + categorie + '\'' +
+               ", Quantité: " + quantite +
+               ", Prix: " + prix +
+               '}';
+    }
 }

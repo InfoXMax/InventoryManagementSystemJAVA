@@ -1,51 +1,43 @@
 package gestioninventaire.client;
 
-import gestioninventaire.dao.ProduitDAO;
+import gestioninventaire.rmi.ProduitService;
 import gestioninventaire.model.Produit;
-import java.sql.SQLException;
-import java.util.List;
+
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.Scanner;
 
 public class InventaireClient {
-    private static ProduitDAO produitDAO = new ProduitDAO();
-    private static Scanner scanner = new Scanner(System.in);
+    private static ProduitService produitService;
+    private static final Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) {
-        while (true) {
-            try {
+        try {
+            // Connect to RMI server
+            Registry registry = LocateRegistry.getRegistry("localhost", 1099);
+            produitService = (ProduitService) registry.lookup("ProduitService");
+
+            while (true) {
                 afficherMenu();
                 int choix = scanner.nextInt();
                 scanner.nextLine(); // Consume newline
 
                 switch (choix) {
-                    case 1:
-                        ajouterProduit();
-                        break;
-                    case 2:
-                        modifierProduit();
-                        break;
-                    case 3:
-                        supprimerProduit();
-                        break;
-                    case 4:
-                        rechercherProduit();
-                        break;
-                    case 5:
+                    case 1 -> ajouterProduit();
+                    case 2 -> modifierProduit();
+                    case 3 -> supprimerProduit();
+                    case 4 -> rechercherProduits();
+                    case 5 -> {
                         System.out.println("Au revoir!");
                         System.exit(0);
-                    default:
-                        System.out.println("Choix invalide.");
+                    }
+                    default -> System.out.println("Choix invalide.");
                 }
-            } catch (SQLException e) {
-                System.out.println("Erreur SQL : " + e.getMessage());
-            } catch (Exception e) {
-                System.out.println("Erreur : " + e.getMessage());
             }
-            scanner.nextLine(); // Clear scanner buffer
+        } catch (Exception e) {
+            System.out.println("Erreur : " + e.getMessage());
         }
     }
-
-
 
     private static void afficherMenu() {
         System.out.println("\n--- Système de Gestion d'Inventaire ---");
@@ -57,86 +49,66 @@ public class InventaireClient {
         System.out.print("Votre choix : ");
     }
 
-    private static void ajouterProduit() throws SQLException {
-        System.out.print("Nom du produit : ");
-        String nom = scanner.nextLine();
-        System.out.print("Catégorie : ");
-        String categorie = scanner.nextLine();
-        System.out.print("Quantité : ");
-        int quantite = scanner.nextInt();
-        System.out.print("Prix : ");
-        double prix = scanner.nextDouble();
-
-        Produit produit = new Produit(nom, categorie, quantite, prix);
-        produitDAO.ajouterProduit(produit);
-        System.out.println("Produit ajouté avec succès !");
-    }
-
-    private static void modifierProduit() throws SQLException {
+    private static void ajouterProduit() {
         try {
-            System.out.print("ID du produit à modifier : ");
-            int id = scanner.nextInt();
-            scanner.nextLine(); // Consume newline
-
-            Produit produit = produitDAO.rechercherParNom("")
-                    .stream()
-                    .filter(p -> p.getId() == id)
-                    .findFirst()
-                    .orElse(null);
-
-            if (produit == null) {
-                System.out.println("Produit non trouvé.");
-                return;
-            }
-
-            System.out.print("Nouveau nom (laisser vide pour conserver) : ");
+            System.out.print("Nom : ");
             String nom = scanner.nextLine();
-            System.out.print("Nouvelle catégorie (laisser vide pour conserver) : ");
+            System.out.print("Catégorie : ");
             String categorie = scanner.nextLine();
-            System.out.print("Nouvelle quantité (-1 pour conserver) : ");
+            System.out.print("Quantité : ");
             int quantite = scanner.nextInt();
-            System.out.print("Nouveau prix (-1 pour conserver) : ");
+            System.out.print("Prix : ");
             double prix = scanner.nextDouble();
-            scanner.nextLine(); // Consume newline
 
-            if (!nom.isEmpty()) produit.setNom(nom);
-            if (!categorie.isEmpty()) produit.setCategorie(categorie);
-            if (quantite != -1) produit.setQuantite(quantite);
-            if (prix != -1) produit.setPrix(prix);
-
-            produitDAO.modifierProduit(produit);
-            System.out.println("Produit modifié avec succès !");
-        } catch (SQLException e) {
-            System.out.println("Erreur SQL : " + e.getMessage());
-            throw e;
+            Produit produit = new Produit(nom, categorie, quantite, prix);
+            produitService.ajouterProduit(produit);
+            System.out.println("Produit ajouté avec succès !");
         } catch (Exception e) {
             System.out.println("Erreur : " + e.getMessage());
         }
     }
 
+    private static void modifierProduit() {
+        try {
+            System.out.print("ID : ");
+            int id = scanner.nextInt();
+            scanner.nextLine();
+            System.out.print("Nom : ");
+            String nom = scanner.nextLine();
+            System.out.print("Catégorie : ");
+            String categorie = scanner.nextLine();
+            System.out.print("Quantité : ");
+            int quantite = scanner.nextInt();
+            System.out.print("Prix : ");
+            double prix = scanner.nextDouble();
 
-    private static void supprimerProduit() throws SQLException {
-        System.out.print("ID du produit à supprimer : ");
-        int id = scanner.nextInt();
-        produitDAO.supprimerProduit(id);
-        System.out.println("Produit supprimé avec succès !");
+            Produit produit = new Produit(id, nom, categorie, quantite, prix);
+            produitService.modifierProduit(produit);
+            System.out.println("Produit modifié avec succès !");
+        } catch (Exception e) {
+            System.out.println("Erreur : " + e.getMessage());
+        }
     }
 
-    private static void rechercherProduit() throws SQLException {
-        System.out.print("Rechercher par nom (ou partie du nom) : ");
-        String nom = scanner.nextLine();
-        List<Produit> produits = produitDAO.rechercherParNom(nom);
-        
-        if (produits.isEmpty()) {
-            System.out.println("Aucun produit trouvé.");
-        } else {
-            produits.forEach(p -> {
-                System.out.println("ID: " + p.getId() + 
-                                   ", Nom: " + p.getNom() + 
-                                   ", Catégorie: " + p.getCategorie() + 
-                                   ", Quantité: " + p.getQuantite() + 
-                                   ", Prix: " + p.getPrix());
-            });
+    private static void supprimerProduit() {
+        try {
+            System.out.print("ID : ");
+            int id = scanner.nextInt();
+            produitService.supprimerProduit(id);
+            System.out.println("Produit supprimé avec succès !");
+        } catch (Exception e) {
+            System.out.println("Erreur : " + e.getMessage());
+        }
+    }
+
+    private static void rechercherProduits() {
+        try {
+            System.out.print("Nom (partiel) : ");
+            String nom = scanner.nextLine();
+            var produits = produitService.rechercherProduits(nom);
+            produits.forEach(p -> System.out.println(p));
+        } catch (Exception e) {
+            System.out.println("Erreur : " + e.getMessage());
         }
     }
 }

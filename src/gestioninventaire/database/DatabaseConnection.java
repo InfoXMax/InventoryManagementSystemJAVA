@@ -9,7 +9,7 @@ public class DatabaseConnection {
     private static final String USER = "root";
     private static final String PASSWORD = "";
 
-    // Static block to load the MySQL driver
+    // Pour utiliser le MySQL driver
     static {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
